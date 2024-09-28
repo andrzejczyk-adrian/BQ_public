@@ -1,0 +1,11 @@
+-- This query retrieves column names and data types from a specific table in BigQuery.
+-- Useful for understanding table structure and preparing prompts based on available fields.
+-- Replace 'project_id', 'dataset_id', and 'your_table_name' with actual values.
+
+SELECT
+  column_name,
+  data_type
+FROM
+  `project_id.dataset_id.INFORMATION_SCHEMA.COLUMNS`
+WHERE
+  table_name = 'your_table_name';
