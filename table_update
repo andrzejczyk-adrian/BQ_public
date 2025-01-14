@@ -1,0 +1,7 @@
+INSERT INTO `dataset.raport`
+SELECT *
+FROM `dataset.raw` AS raw
+WHERE raw.IdZamowienia NOT IN (
+    SELECT IdZamowienia
+    FROM `dataset.raport`
+);
