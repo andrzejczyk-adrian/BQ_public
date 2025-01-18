@@ -1,0 +1,65 @@
+INSERT INTO `erp.r_erp_sprzedaz` 
+-- Krok 1: Usunięcie duplikatów i NULLi z tabeli źródłowej
+WITH CleanedSource AS (
+    SELECT DISTINCT
+        IdZamowienia AS CleanedIdZamowienia,
+        -- Dodaj tutaj pozostałe kolumny, które chcesz przenieść
+        IdZamowienia, `Data`, NumerFV, WartoscNetto, WartoscBrutto, Zysk, Marza, Email
+    FROM
+        `raw_sheets.erp_sprzedaz`
+    WHERE IdZamowienia IS not NULL
+   AND IdZamowienia IN (
+       SELECT IdZamowienia
+       FROM (
+           SELECT
+               IdZamowienia,
+               ROW_NUMBER() OVER (PARTITION BY IdZamowienia ORDER BY IdZamowienia) AS row_num
+           FROM `erp.r_erp_sprzedaz`
+       )
+       WHERE row_num = 1
+   )
+),
+
+-- Krok 2: Pobranie istniejących IdZamowienia z tabeli docelowej
+ExistingOrders AS (
+    SELECT DISTINCT
+        IdZamowienia AS ExistingIdZamowienia
+    FROM
+        `erp.r_erp_sprzedaz`
+),
+
+-- Krok 3: Filtrowanie tylko nowych zamówień
+NewOrders AS (
+    SELECT
+        cs.CleanedIdZamowienia,
+   cs.*
+    FROM
+        CleanedSource cs
+    LEFT JOIN
+        ExistingOrders eo
+    ON
+        cs.CleanedIdZamowienia = eo.ExistingIdZamowienia
+    WHERE
+        eo.ExistingIdZamowienia IS NULL
+)
+
+-- Dodanie nowych zamówień do tabeli docelowej
+SELECT
+    `Data`, IdZamowienia, NumerFV, WartoscNetto, WartoscBrutto, Zysk, Marza, Email
+FROM
+    NewOrders;
+
+
+-- usuwanie duplikatow
+DELETE FROM `erp.r_erp_sprzedaz`
+WHERE IdZamowienia IS NULL
+   OR IdZamowienia IN (
+       SELECT IdZamowienia
+       FROM (
+           SELECT
+               IdZamowienia,
+               ROW_NUMBER() OVER (PARTITION BY IdZamowienia ORDER BY IdZamowienia) AS row_num
+           FROM `erp.r_erp_sprzedaz`
+       )
+       WHERE row_num > 1
+   );
