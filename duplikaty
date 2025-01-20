@@ -1,0 +1,4 @@
+SELECT `IdZamowienia`, COUNT(*) AS duplicate_count
+FROM `source.sheets.erp_sprzedaz`
+GROUP BY `IdZamowienia`
+HAVING COUNT(*) > 1
